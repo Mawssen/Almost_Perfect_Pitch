@@ -18,7 +18,7 @@
       margin: 6px 0 18px;
     }
 
-    .card { max-width:900px; margin:0 auto; background:#121a2b; border:1px solid #22304f; border-radius:14px; padding:18px; }
+    .card { max-width:900px; margin:0 auto; background:#121a2b; border:1px solid #22304f; border-radius:14px; padding:18px; position:relative; }
     h1 { margin:0 0 10px; font-size:20px; } /* (kept but unused for the card title) */
     .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .pill { padding:4px 10px; border-radius:999px; border:1px solid #2a3a61; background:#0f1627; font-size:13px; opacity:0.95; }
@@ -35,14 +35,29 @@
     .ok { border-color:#2c7a4b; background:#153524; }
     .bad { border-color:#8a2e2e; background:#3a1616; }
     .hint-eliminated { opacity:0.5; cursor:not-allowed; pointer-events:none; }
-    .status { margin-top:12px; font-size:14px; min-height:20px; }
+    .status { margin-top:12px; font-size:14px; min-height:20px; white-space:pre-line; }
     .divider { height:1px; background:#22304f; margin:14px 0; }
     .small { font-size:12px; opacity:0.8; margin-top:12px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
 
-    /* Settings */
-    details.settings { border: 1px solid #22304f; border-radius: 14px; padding: 10px 12px; background:#0f1627; }
-    details.settings > summary { cursor:pointer; user-select:none; font-weight:600; }
+    /* Main menu: four buttons centered, stacked */
+    .main-menu { display:flex; flex-direction:column; align-items:center; gap:10px; margin:12px 0; }
+    .main-menu button { min-width:200px; }
+    .main-menu.hidden { display:none; }
+    /* Settings panel */
+    .settings-panel { display:none; border:1px solid #22304f; border-radius:14px; padding:10px 12px; background:#0f1627; margin-bottom:14px; }
+    .settings-panel.visible { display:block; }
+    .settings-back-row { margin-bottom:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .stats-line { margin:6px 0; font-size:14px; }
+    .stats-modal { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:100; padding:24px; box-sizing:border-box; }
+    .stats-modal.visible { display:flex; }
+    .stats-modal-content { background:#121a2b; border:1px solid #22304f; border-radius:14px; padding:24px; max-width:480px; max-height:85vh; overflow:auto; }
+    .stats-modal h2 { margin:0 0 12px; font-size:18px; color:#7aa8ff; }
+    .stats-modal .hint { margin-top:12px; }
+    .stats-modal-actions { margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .stats-modal-close { margin:0; }
+    .stats-clear-btn { border-color:#6b2a2a; background:#2a1616; color:#e8a0a0; }
+    .stats-clear-btn:hover { filter:brightness(1.15); }
     .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
     .field { display:flex; flex-direction:column; gap:6px; }
     label { font-size:13px; opacity:0.9; }
@@ -57,11 +72,35 @@
     .hint { font-size:12px; opacity:0.8; }
     .pill.revealable { cursor:pointer; user-select:none; }
     .pill.revealable:hover { filter:brightness(1.1); }
-    .mode-row { margin:12px 0; }
     .mode-btn { min-width:160px; }
     .test-area { display:none; }
-    .test-area.visible { display:block; }
-    .mode-row.hidden { display:none; }
+    .test-area.visible { display:flex; flex-direction:column; align-items:center; }
+    .test-area .row { justify-content:center; }
+    .test-area .prompt { text-align:center; }
+    .test-area .status { text-align:center; }
+    .test-area .small { text-align:center; }
+    .test-area .divider { align-self:stretch; }
+    .test-area.done .notes-played-row { display:none; }
+    .final-score-display { display:none; text-align:center; font-size:1.75rem; font-weight:800; color:#7aa8ff; margin:16px 0 8px; }
+    .test-area.done .final-score-display { display:block; }
+    .done-message { display:none; text-align:center; margin:12px 0; font-weight:700; }
+    .test-area.done .done-message { display:block; }
+    .done-message.perfect { font-size:2.5rem; font-weight:800; color:#2c7a4b; }
+    .done-message.great { font-size:1.75rem; color:#5a9f5a; }
+    .done-message.good { font-size:1.35rem; color:#8fbc8f; }
+    .done-message.shy { font-size:1rem; font-weight:normal; opacity:0.95; }
+    .card-wrapper { width:100%; max-width:900px; margin:0 auto; position:relative; }
+    .card-wrapper .card { margin:0; }
+    .help-btn { margin:0; }
+    .help-modal { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:100; padding:24px; box-sizing:border-box; }
+    .help-modal.visible { display:flex; }
+    .help-modal-content { background:#121a2b; border:1px solid #22304f; border-radius:14px; padding:24px; max-width:480px; max-height:85vh; overflow:auto; }
+    .help-modal h2 { margin:0 0 12px; font-size:18px; color:#7aa8ff; }
+    .help-modal h3 { margin:16px 0 8px; font-size:14px; opacity:0.95; }
+    .help-modal p, .help-modal ul { margin:0 0 10px; font-size:14px; line-height:1.5; }
+    .help-modal ul { padding-left:20px; }
+    .help-modal kbd { background:#17223a; border:1px solid #2a3a61; border-radius:4px; padding:2px 6px; font-size:12px; }
+    .help-modal-close { margin-top:16px; }
     @media (max-width: 720px) {
       .grid { grid-template-columns: 1fr; }
       .choice { min-width: 100%; }
@@ -74,11 +113,13 @@
 <body>
   <div class="page-title">APP: Almost Perfect Pitch 🍑🎵</div>
 
+  <div class="card-wrapper">
   <div class="card">
-    <!-- Settings should be CLOSED by default: remove "open" -->
-    <details class="settings">
-      <summary>Settings</summary>
-
+    <div class="settings-panel" id="settingsPanel">
+      <div class="settings-back-row">
+        <button type="button" id="settingsBackBtn">← Back</button>
+        <button type="button" id="statsBtn">Stats</button>
+      </div>
       <div class="grid">
         <div class="field">
           <label for="lowestNote">Lowest note (C2–C6)</label>
@@ -134,11 +175,13 @@
       <div class="actions">
         <button id="applySettingsBtn" type="button">Apply settings</button>
       </div>
-    </details>
+    </div>
 
-    <div class="row mode-row" id="modeRow">
+    <div class="main-menu" id="mainMenu">
       <button type="button" class="mode-btn" id="scaleTestBtn">Scale test</button>
       <button type="button" class="mode-btn" id="jensTestBtn">Jens test</button>
+      <button type="button" id="settingsBtn">Settings</button>
+      <button type="button" class="help-btn" id="helpBtn">Help</button>
     </div>
 
     <div class="test-area" id="testArea">
@@ -162,12 +205,48 @@
       <div class="divider"></div>
 
       <div class="row" id="choices"></div>
-
+      <div id="finalScoreDisplay" class="final-score-display"></div>
       <div class="status" id="status"></div>
-      <div class="small">
+      <div id="doneMessage" class="done-message"></div>
+      <div class="small notes-played-row" id="notesPlayedRow">
         Notes played: <span class="mono" id="notesOut">-</span>
       </div>
     </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="stats-modal" id="statsModal" aria-hidden="true">
+    <div class="stats-modal-content">
+      <h2>Your stats</h2>
+      <div id="statsNaturally" class="stats-line"></div>
+      <div id="statsHard" class="stats-line"></div>
+      <p class="hint">Based on correct and wrong answers across all tests. Wrong answers are weighted so you'll see them more often if you get them wrong more often.</p>
+      <div class="stats-modal-actions">
+        <button type="button" class="stats-modal-close" id="statsModalClose">Close</button>
+        <button type="button" class="stats-clear-btn" id="statsClearHistoryBtn">Clear history</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="help-modal" id="helpModal" aria-hidden="true">
+    <div class="help-modal-content">
+      <h2>How the app works</h2>
+      <p>Choose <strong>Scale test</strong> or <strong>Jens test</strong>. In Settings you can set the note range, direction (up/down/random), number of tests, and which scales or jens (tetrachords) to include.</p>
+      <p>Press <strong>Start Test</strong> to begin. A scale or jens is played on the piano; pick the correct answer from the choices. Use <strong>Replay</strong> to hear it again, <strong>Hint</strong> to lock half+1 of the wrong choices (once per question), and <strong>Next</strong> to continue. <strong>Exit</strong> returns to the mode selection.</p>
+      <p>Click the <strong>Direction</strong> and <strong>Start</strong> pills to reveal the playing direction and starting note for the current question.</p>
+
+      <h3>Keyboard shortcuts</h3>
+      <ul>
+        <li><kbd>Space</kbd> — Replay</li>
+        <li><kbd>Enter</kbd> — Start test (when on first screen) or Next (after answering)</li>
+        <li><kbd>1</kbd>–<kbd>9</kbd> — Select choice 1–9</li>
+        <li><kbd>-</kbd> — Select choice 10</li>
+        <li><kbd>Esc</kbd> — Exit (back to mode selection)</li>
+      </ul>
+      <!-- End of Selection -->
+```
+      <button type="button" class="help-modal-close" id="helpModalClose">Close</button>
     </div>
   </div>
 
@@ -267,18 +346,23 @@
       const inst = await ensurePiano();
 
       for (const midi of midiNotes) {
+        if (playbackCancelled) return;
         inst.play(midi, ctx.currentTime, {
           duration: noteDurationSec,
           gain: 0.8,
           velocity: 110
         });
         await sleep(noteDurationSec * 1000);
+        if (playbackCancelled) return;
         await sleep(pauseDurationSec * 1000);
       }
     }
 
     // ===== Settings state =====
     const SETTINGS_STORAGE_KEY = "scaleEarTrainerSettings";
+    const STATS_STORAGE_KEY = "scaleEarTrainerStats";
+    let scaleStats = {}; // scaleId -> { correct, wrong }
+    let jensStats = {};  // jensId -> { correct, wrong }
     const settings = {
       lowestMidi: noteNameToMidi("G2"), // default lowest
       highestMidi: noteNameToMidi("D4"), // default highest
@@ -308,6 +392,32 @@
       } catch (e) { /* ignore */ }
     }
 
+    function loadStatsFromStorage() {
+      try {
+        const raw = localStorage.getItem(STATS_STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data.scaleStats && typeof data.scaleStats === "object") scaleStats = data.scaleStats;
+        if (data.jensStats && typeof data.jensStats === "object") jensStats = data.jensStats;
+      } catch (e) { /* ignore */ }
+    }
+
+    function saveStatsToStorage() {
+      try {
+        localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify({
+          scaleStats,
+          jensStats
+        }));
+      } catch (e) { /* ignore */ }
+    }
+
+    function clearStatsHistory() {
+      scaleStats = {};
+      jensStats = {};
+      saveStatsToStorage();
+      refreshStatsDisplay();
+    }
+
     function saveSettingsToStorage() {
       try {
         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
@@ -324,6 +434,7 @@
     // ===== App state =====
     let testIndex = 0;
     let correctCount = 0;
+    let mistakes = []; // { correctId, wrongId } per wrong answer
 
     let testMode = null; // null | "scale" | "jens"
     let current = null; // scale: {scale, chosenScaleId, ...} | jens: {jens, chosenJensId, ...}
@@ -332,6 +443,7 @@
     let startRevealed = false;
     let hintUsed = false;
     let isPlaying = false;
+    let playbackCancelled = false;
 
     // ===== UI elements =====
     const testMeta = document.getElementById("testMeta");
@@ -344,7 +456,7 @@
     const statusEl = document.getElementById("status");
     const notesOut = document.getElementById("notesOut");
 
-    const modeRow = document.getElementById("modeRow");
+    const mainMenu = document.getElementById("mainMenu");
     const testArea = document.getElementById("testArea");
     const scaleTestBtn = document.getElementById("scaleTestBtn");
     const jensTestBtn = document.getElementById("jensTestBtn");
@@ -427,6 +539,83 @@
       return (Math.random() < 0.5) ? "up" : "down";
     }
 
+    function pickWeighted(items, getWeight) {
+      const weights = items.map(getWeight);
+      const total = weights.reduce((a, b) => a + b, 0);
+      if (total <= 0) return items[Math.floor(Math.random() * items.length)];
+      let r = Math.random() * total;
+      for (let i = 0; i < items.length; i++) {
+        r -= weights[i];
+        if (r < 0) return items[i];
+      }
+      return items[items.length - 1];
+    }
+
+    const STATS_MIN_ATTEMPTS = 3;
+
+    function refreshStatsDisplay() {
+      const naturallyEl = document.getElementById("statsNaturally");
+      const hardEl = document.getElementById("statsHard");
+      if (!naturallyEl || !hardEl) return;
+
+      const enough = (s) => ((s.correct || 0) + (s.wrong || 0)) >= STATS_MIN_ATTEMPTS;
+
+      const topScaleByCorrect = () => {
+        const entries = Object.entries(scaleStats).filter(([, s]) => enough(s));
+        if (entries.length === 0) return null;
+        const maxCorrect = Math.max(...entries.map(([, s]) => s.correct || 0));
+        const top = entries.find(([, s]) => (s.correct || 0) === maxCorrect);
+        return top ? Number(top[0]) : null;
+      };
+      const topJensByCorrect = () => {
+        const entries = Object.entries(jensStats).filter(([, s]) => enough(s));
+        if (entries.length === 0) return null;
+        const maxCorrect = Math.max(...entries.map(([, s]) => s.correct || 0));
+        const top = entries.find(([, s]) => (s.correct || 0) === maxCorrect);
+        return top ? top[0] : null;
+      };
+      const topScaleByWrong = () => {
+        const entries = Object.entries(scaleStats).filter(([, s]) => enough(s) && (s.wrong || 0) > 0);
+        if (entries.length === 0) return null;
+        const maxWrong = Math.max(...entries.map(([, s]) => s.wrong || 0));
+        const top = entries.find(([, s]) => (s.wrong || 0) === maxWrong);
+        return top ? Number(top[0]) : null;
+      };
+      const topJensByWrong = () => {
+        const entries = Object.entries(jensStats).filter(([, s]) => enough(s) && (s.wrong || 0) > 0);
+        if (entries.length === 0) return null;
+        const maxWrong = Math.max(...entries.map(([, s]) => s.wrong || 0));
+        const top = entries.find(([, s]) => (s.wrong || 0) === maxWrong);
+        return top ? top[0] : null;
+      };
+
+      const scaleName = (id) => SCALES.find(s => s.id === id)?.name ?? id;
+      const jensName = (id) => JENSES.find(j => j.id === id)?.name ?? id;
+
+      const natScale = topScaleByCorrect();
+      const natJens = topJensByCorrect();
+      const hardScale = topScaleByWrong();
+      const hardJens = topJensByWrong();
+
+      if (natScale != null || natJens != null) {
+        const parts = [];
+        if (natScale != null) parts.push(scaleName(natScale));
+        if (natJens != null) parts.push(jensName(natJens));
+        naturallyEl.textContent = "You naturally hear: " + parts.join(" & ") + ".";
+      } else {
+        naturallyEl.textContent = "You naturally hear: — (need ≥" + STATS_MIN_ATTEMPTS + " attempts per item).";
+      }
+
+      if (hardScale != null || hardJens != null) {
+        const parts = [];
+        if (hardScale != null) parts.push(scaleName(hardScale));
+        if (hardJens != null) parts.push(jensName(hardJens));
+        hardEl.textContent = "Still hard to distinguish: " + parts.join(" & ") + ".";
+      } else {
+        hardEl.textContent = "Still hard to distinguish: — (need ≥" + STATS_MIN_ATTEMPTS + " attempts per item).";
+      }
+    }
+
     function newTest() {
       if (testIndex >= settings.totalTests) return;
 
@@ -445,7 +634,7 @@
       startRevealed = false;
       hintUsed = false;
 
-      const jens = enabledJenses[Math.floor(Math.random() * enabledJenses.length)];
+      const jens = pickWeighted(enabledJenses, j => (jensStats[j.id]?.wrong ?? 0) + 1);
         const direction = pickDirection();
         const lo = Math.min(settings.lowestMidi, settings.highestMidi);
         const hi = Math.max(settings.lowestMidi, settings.highestMidi);
@@ -465,7 +654,7 @@
           availableJenses: enabledJenses
         };
 
-        promptEl.textContent = `Listen, then choose the jens.`;
+        promptEl.textContent = "";
         notesOut.textContent = "-";
         nextBtn.disabled = true;
         hintBtn.disabled = false;
@@ -502,7 +691,7 @@
       startRevealed = false;
       hintUsed = false;
 
-      const scale = enabledScales[Math.floor(Math.random() * enabledScales.length)];
+      const scale = pickWeighted(enabledScales, s => (scaleStats[s.id]?.wrong ?? 0) + 1);
       const direction = pickDirection();
 
       const lo = Math.min(settings.lowestMidi, settings.highestMidi);
@@ -524,7 +713,7 @@
         availableScales: enabledScales
       };
 
-      promptEl.textContent = `Listen, then choose the scale.`;
+      promptEl.textContent = "";
       notesOut.textContent = "-";
       nextBtn.disabled = true;
       hintBtn.disabled = false;
@@ -571,12 +760,13 @@
       if (!current) return;
       if (isPlaying) return;
       isPlaying = true;
+      playbackCancelled = false;
       replayBtn.disabled = true;
       nextBtn.disabled = true;
       statusEl.textContent = "Playing…";
       try {
         await playScale(current.midiNotes, DEFAULT_NOTE_DURATION_SEC, DEFAULT_PAUSE_DURATION_SEC);
-        statusEl.textContent = testMode === "jens" ? "Choose the jens." : "Choose the scale.";
+        if (!playbackCancelled) statusEl.textContent = testMode === "jens" ? "Choose the jens." : "Choose the scale.";
       } finally {
         isPlaying = false;
         replayBtn.disabled = false;
@@ -602,11 +792,21 @@
       if (correctBtn) correctBtn.classList.add("ok");
       if (!correct) clickedBtn.classList.add("bad");
 
+      const correctId = testMode === "jens" ? current.chosenJensId : current.chosenScaleId;
+      if (testMode === "jens") {
+        if (!jensStats[correctId]) jensStats[correctId] = { correct: 0, wrong: 0 };
+        if (correct) jensStats[correctId].correct += 1; else jensStats[correctId].wrong += 1;
+      } else {
+        if (!scaleStats[correctId]) scaleStats[correctId] = { correct: 0, wrong: 0 };
+        if (correct) scaleStats[correctId].correct += 1; else scaleStats[correctId].wrong += 1;
+      }
+      saveStatsToStorage();
+
       if (correct) {
         correctCount += 1;
         statusEl.textContent = "✅ Correct!";
       } else {
-        const correctName = testMode === "jens" ? current.jens.name : `${current.chosenScaleId}: ${current.scale.name}`;
+        mistakes.push({ correctId, wrongId: guessId });
         statusEl.textContent = `❌ Incorrect!`;
       }
 
@@ -619,10 +819,60 @@
       nextBtn.textContent = (testIndex === settings.totalTests) ? "Finish" : "Next";
     }
 
+    function getMostRepeatedMistake() {
+      if (mistakes.length === 0) return null;
+      const countByPair = new Map();
+      for (const { correctId, wrongId } of mistakes) {
+        const pairKey = [String(correctId), String(wrongId)].sort().join("|");
+        countByPair.set(pairKey, (countByPair.get(pairKey) || 0) + 1);
+      }
+      let maxCount = 0;
+      let bestKey = null;
+      for (const [key, count] of countByPair) {
+        if (count > maxCount) { maxCount = count; bestKey = key; }
+      }
+      if (!bestKey) return null;
+      const [idA, idB] = bestKey.split("|");
+      const id1 = testMode === "jens" ? idA : Number(idA);
+      const id2 = testMode === "jens" ? idB : Number(idB);
+      const name1 = testMode === "jens"
+        ? (JENSES.find(j => j.id === id1)?.name ?? id1)
+        : (SCALES.find(s => s.id === id1)?.name ?? `${id1}`);
+      const name2 = testMode === "jens"
+        ? (JENSES.find(j => j.id === id2)?.name ?? id2)
+        : (SCALES.find(s => s.id === id2)?.name ?? `${id2}`);
+      return { name1, name2, count: maxCount };
+    }
+
     function finishIfDone() {
       if (testIndex < settings.totalTests) return false;
-      promptEl.textContent = "Done.";
-      statusEl.textContent = `Final score: ${correctCount} / ${settings.totalTests}`;
+      testArea.classList.add("done");
+      promptEl.textContent = "";
+      const finalScoreEl = document.getElementById("finalScoreDisplay");
+      if (finalScoreEl) finalScoreEl.textContent = `Final score: ${correctCount} / ${settings.totalTests}`;
+
+      const pct = settings.totalTests > 0 ? (100 * correctCount / settings.totalTests) : 0;
+      const doneMessage = document.getElementById("doneMessage");
+      doneMessage.className = "done-message";
+      if (correctCount === settings.totalTests) {
+        doneMessage.textContent = "PERFECT!";
+        doneMessage.classList.add("perfect");
+      } else if (pct > 80) {
+        doneMessage.textContent = "Great!";
+        doneMessage.classList.add("great");
+      } else if (pct >= 50) {
+        doneMessage.textContent = "Good!";
+        doneMessage.classList.add("good");
+      } else {
+        doneMessage.textContent = "The scales are shy today, they'll sound better in the next round! :))";
+        doneMessage.classList.add("shy");
+      }
+
+      const top = getMostRepeatedMistake();
+      statusEl.textContent = (top && top.count > 3)
+        ? `You mix up ${top.name1} and ${top.name2} more often (${top.count} times).`
+        : "";
+
       replayBtn.disabled = true;
       hintBtn.disabled = true;
       nextBtn.disabled = true;
@@ -635,12 +885,13 @@
       testMode = null;
       testIndex = 0;
       correctCount = 0;
+      mistakes = [];
       current = null;
       answered = false;
       directionRevealed = false;
       startRevealed = false;
 
-      modeRow.classList.remove("hidden");
+      mainMenu.classList.remove("hidden");
       testArea.classList.remove("visible");
       promptEl.textContent = "Choose test type: Scale or Jens.";
       statusEl.textContent = "";
@@ -659,11 +910,17 @@
       testMode = mode;
       testIndex = 0;
       correctCount = 0;
+      mistakes = [];
       current = null;
       answered = false;
       directionRevealed = false;
       startRevealed = false;
-      modeRow.classList.add("hidden");
+      testArea.classList.remove("done");
+      const doneMessageEl = document.getElementById("doneMessage");
+      if (doneMessageEl) { doneMessageEl.textContent = ""; doneMessageEl.className = "done-message"; }
+      const finalScoreEl = document.getElementById("finalScoreDisplay");
+      if (finalScoreEl) finalScoreEl.textContent = "";
+      mainMenu.classList.add("hidden");
       testArea.classList.add("visible");
       promptEl.textContent = "Press \"Start Test\" to begin.";
       statusEl.textContent = "";
@@ -812,11 +1069,76 @@
     hintBtn.addEventListener("click", useHint);
 
     nextBtn.addEventListener("click", () => {
+      playbackCancelled = true;
       if (finishIfDone()) return;
       newTest();
     });
 
-    restartBtn.addEventListener("click", restart);
+    restartBtn.addEventListener("click", () => {
+      playbackCancelled = true;
+      restart();
+    });
+
+    const settingsBtn = document.getElementById("settingsBtn");
+    const settingsPanel = document.getElementById("settingsPanel");
+    const settingsBackBtn = document.getElementById("settingsBackBtn");
+    settingsBtn.addEventListener("click", () => {
+      settingsPanel.classList.add("visible");
+      mainMenu.classList.add("hidden");
+    });
+
+    const statsBtn = document.getElementById("statsBtn");
+    const statsModal = document.getElementById("statsModal");
+    const statsModalClose = document.getElementById("statsModalClose");
+    if (statsBtn && statsModal) {
+      statsBtn.addEventListener("click", () => {
+        refreshStatsDisplay();
+        statsModal.classList.add("visible");
+        statsModal.setAttribute("aria-hidden", "false");
+      });
+    }
+    if (statsModalClose && statsModal) {
+      statsModalClose.addEventListener("click", () => {
+        statsModal.classList.remove("visible");
+        statsModal.setAttribute("aria-hidden", "true");
+      });
+      statsModal.addEventListener("click", (e) => {
+        if (e.target === statsModal) {
+          statsModal.classList.remove("visible");
+          statsModal.setAttribute("aria-hidden", "true");
+        }
+      });
+    }
+    const statsClearHistoryBtn = document.getElementById("statsClearHistoryBtn");
+    if (statsClearHistoryBtn) {
+      statsClearHistoryBtn.addEventListener("click", () => {
+        if (confirm("Clear all practice history (correct and wrong counts)?")) {
+          clearStatsHistory();
+        }
+      });
+    }
+    settingsBackBtn.addEventListener("click", () => {
+      settingsPanel.classList.remove("visible");
+      mainMenu.classList.remove("hidden");
+    });
+
+    const helpBtn = document.getElementById("helpBtn");
+    const helpModal = document.getElementById("helpModal");
+    const helpModalClose = document.getElementById("helpModalClose");
+    helpBtn.addEventListener("click", () => {
+      helpModal.classList.add("visible");
+      helpModal.setAttribute("aria-hidden", "false");
+    });
+    helpModalClose.addEventListener("click", () => {
+      helpModal.classList.remove("visible");
+      helpModal.setAttribute("aria-hidden", "true");
+    });
+    helpModal.addEventListener("click", (e) => {
+      if (e.target === helpModal) {
+        helpModal.classList.remove("visible");
+        helpModal.setAttribute("aria-hidden", "true");
+      }
+    });
 
     scaleTestBtn.addEventListener("click", () => enterTestMode("scale"));
     jensTestBtn.addEventListener("click", () => enterTestMode("jens"));
@@ -862,6 +1184,7 @@
 
     // init
     loadSettingsFromStorage();
+    loadStatsFromStorage();
     setSettingsInputsFromState();
     restart();
   </script>
