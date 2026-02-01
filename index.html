@@ -242,10 +242,9 @@
         <li><kbd>Enter</kbd> — Start test (when on first screen) or Next (after answering)</li>
         <li><kbd>1</kbd>–<kbd>9</kbd> — Select choice 1–9</li>
         <li><kbd>-</kbd> — Select choice 10</li>
-        <li><kbd>Esc</kbd> — Exit (back to mode selection)</li>
+        <li><kbd>Esc</kbd> — Close modal, back from Settings, or exit test</li>
       </ul>
       <!-- End of Selection -->
-```
       <button type="button" class="help-modal-close" id="helpModalClose">Close</button>
     </div>
   </div>
@@ -1168,7 +1167,20 @@
         }
       } else if (e.code === "Escape") {
         e.preventDefault();
-        if (testArea.classList.contains("visible")) restart();
+        const helpModal = document.getElementById("helpModal");
+        const statsModal = document.getElementById("statsModal");
+        if (helpModal && helpModal.classList.contains("visible")) {
+          helpModal.classList.remove("visible");
+          helpModal.setAttribute("aria-hidden", "true");
+        } else if (statsModal && statsModal.classList.contains("visible")) {
+          statsModal.classList.remove("visible");
+          statsModal.setAttribute("aria-hidden", "true");
+        } else if (settingsPanel.classList.contains("visible")) {
+          settingsPanel.classList.remove("visible");
+          mainMenu.classList.remove("hidden");
+        } else if (testArea.classList.contains("visible")) {
+          restart();
+        }
       } else {
         // 1-9 -> choices 1-9, Minus -> choice 10
         const choiceBtns = [...choicesEl.querySelectorAll("button.choice:not(.hint-eliminated)")].filter(b => !b.disabled);
