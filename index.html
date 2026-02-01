@@ -116,7 +116,19 @@
           <button id="selectNoneBtn" type="button">Select none</button>
         </div>
         <div class="scale-list" id="scaleChecklist"></div>
-        <div class="hint">If none are selected, the app will refuse to start a test.</div>
+        <div class="hint">If none are selected, Scale test will refuse to start.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label>Jens (tetrachords) to include</label>
+        <div class="actions">
+          <button id="selectAllJensBtn" type="button">Select all</button>
+          <button id="selectNoneJensBtn" type="button">Select none</button>
+        </div>
+        <div class="scale-list" id="jensChecklist"></div>
+        <div class="hint">If none are selected, Jens test will refuse to start.</div>
       </div>
 
       <div class="actions">
@@ -272,7 +284,8 @@
       highestMidi: noteNameToMidi("D4"), // default highest
       directionMode: "random", // "random" | "up" | "down"
       totalTests: 5,
-      enabledScaleIds: new Set(SCALES.map(s => s.id))
+      enabledScaleIds: new Set(SCALES.map(s => s.id)),
+      enabledJensIds: new Set(JENSES.map(j => j.id))
     };
 
     function loadSettingsFromStorage() {
@@ -288,6 +301,10 @@
           const ids = data.enabledScaleIds.map(Number).filter(id => SCALES.some(s => s.id === id));
           settings.enabledScaleIds = new Set(ids.length ? ids : SCALES.map(s => s.id));
         }
+        if (Array.isArray(data.enabledJensIds)) {
+          const ids = data.enabledJensIds.filter(id => JENSES.some(j => j.id === id));
+          settings.enabledJensIds = new Set(ids.length ? ids : JENSES.map(j => j.id));
+        }
       } catch (e) { /* ignore */ }
     }
 
@@ -298,7 +315,8 @@
           highestMidi: settings.highestMidi,
           directionMode: settings.directionMode,
           totalTests: settings.totalTests,
-          enabledScaleIds: [...settings.enabledScaleIds]
+          enabledScaleIds: [...settings.enabledScaleIds],
+          enabledJensIds: [...settings.enabledJensIds]
         }));
       } catch (e) { /* ignore */ }
     }
@@ -342,8 +360,11 @@
     const directionModeEl = document.getElementById("directionMode");
     const totalTestsEl = document.getElementById("totalTests");
     const scaleChecklistEl = document.getElementById("scaleChecklist");
+    const jensChecklistEl = document.getElementById("jensChecklist");
     const selectAllBtn = document.getElementById("selectAllBtn");
     const selectNoneBtn = document.getElementById("selectNoneBtn");
+    const selectAllJensBtn = document.getElementById("selectAllJensBtn");
+    const selectNoneJensBtn = document.getElementById("selectNoneJensBtn");
     const applySettingsBtn = document.getElementById("applySettingsBtn");
 
     function setMeta() {
@@ -396,6 +417,10 @@
       return SCALES.filter(s => settings.enabledScaleIds.has(s.id));
     }
 
+    function getEnabledJenses() {
+      return JENSES.filter(j => settings.enabledJensIds.has(j.id));
+    }
+
     function pickDirection() {
       if (settings.directionMode === "up") return "up";
       if (settings.directionMode === "down") return "down";
@@ -406,13 +431,21 @@
       if (testIndex >= settings.totalTests) return;
 
       if (testMode === "jens") {
+        const enabledJenses = getEnabledJenses();
+        if (enabledJenses.length === 0) {
+          statusEl.textContent = "Select at least one jens in Settings.";
+          replayBtn.disabled = true;
+          nextBtn.disabled = true;
+          clearChoices();
+          return;
+        }
       testIndex += 1;
       answered = false;
       directionRevealed = false;
       startRevealed = false;
       hintUsed = false;
 
-      const jens = JENSES[Math.floor(Math.random() * JENSES.length)];
+      const jens = enabledJenses[Math.floor(Math.random() * enabledJenses.length)];
         const direction = pickDirection();
         const lo = Math.min(settings.lowestMidi, settings.highestMidi);
         const hi = Math.max(settings.lowestMidi, settings.highestMidi);
@@ -429,7 +462,7 @@
           startMidi,
           midiNotes,
           noteNames,
-          availableJenses: JENSES
+          availableJenses: enabledJenses
         };
 
         promptEl.textContent = `Listen, then choose the jens.`;
@@ -664,6 +697,26 @@
       }
     }
 
+    function buildJensChecklist() {
+      jensChecklistEl.innerHTML = "";
+      for (const j of JENSES) {
+        const row = document.createElement("label");
+        row.className = "chk";
+
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = settings.enabledJensIds.has(j.id);
+        cb.dataset.jensId = j.id;
+
+        const text = document.createElement("div");
+        text.textContent = j.name;
+
+        row.appendChild(cb);
+        row.appendChild(text);
+        jensChecklistEl.appendChild(row);
+      }
+    }
+
     function buildNoteSelectOptions(selectEl) {
       // C2..C6 inclusive
       const startMidi = noteNameToMidi("C2"); // 36
@@ -687,6 +740,7 @@
       totalTestsEl.value = String(settings.totalTests);
 
       buildScaleChecklist();
+      buildJensChecklist();
       setMeta();
       testMeta.textContent = `Test: ${testIndex} / ${settings.totalTests}`;
     }
@@ -711,6 +765,14 @@
       }
       settings.enabledScaleIds = newSet;
 
+      // jens selection
+      const newJensSet = new Set();
+      const jensBoxes = [...jensChecklistEl.querySelectorAll('input[type="checkbox"]')];
+      for (const cb of jensBoxes) {
+        if (cb.checked) newJensSet.add(cb.dataset.jensId);
+      }
+      settings.enabledJensIds = newJensSet;
+
       saveSettingsToStorage();
       testMeta.textContent = `Test: ${testIndex} / ${settings.totalTests}`;
       setMeta();
@@ -723,6 +785,16 @@
 
     selectNoneBtn.addEventListener("click", () => {
       const boxes = [...scaleChecklistEl.querySelectorAll('input[type="checkbox"]')];
+      for (const cb of boxes) cb.checked = false;
+    });
+
+    selectAllJensBtn.addEventListener("click", () => {
+      const boxes = [...jensChecklistEl.querySelectorAll('input[type="checkbox"]')];
+      for (const cb of boxes) cb.checked = true;
+    });
+
+    selectNoneJensBtn.addEventListener("click", () => {
+      const boxes = [...jensChecklistEl.querySelectorAll('input[type="checkbox"]')];
       for (const cb of boxes) cb.checked = false;
     });
 
