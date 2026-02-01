@@ -1,4 +1,4 @@
-# Almost Perfect Pitch 🎶
+# Almost Perfect Pitch 🍑🎵
 
 **Almost Perfect Pitch** is a browser-based ear-training tool for practicing **relative pitch** through **scale, mode, and jens recognition**.  
 The app plays randomized pitch patterns using high-quality piano sounds and challenges you to identify their structure by ear.
