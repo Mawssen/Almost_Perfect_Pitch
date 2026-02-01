@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>APP: Almost Perfect Pitch 🍑🎵</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin:0; padding:24px; background:#0b0f19; color:#e8ecf1; }
+
+    /* Title outside the box */
+    .page-title{
+      text-align:center;
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color:#7aa8ff;
+      margin: 6px 0 18px;
+    }
+
+    .card { max-width:900px; margin:0 auto; background:#121a2b; border:1px solid #22304f; border-radius:14px; padding:18px; }
+    h1 { margin:0 0 10px; font-size:20px; } /* (kept but unused for the card title) */
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .pill { padding:4px 10px; border-radius:999px; border:1px solid #2a3a61; background:#0f1627; font-size:13px; opacity:0.95; }
+    .prompt { font-size:18px; margin:12px 0 14px; line-height:1.35; }
+    button {
+      border:1px solid #2a3a61; background:#17223a; color:#e8ecf1;
+      padding:10px 12px; border-radius:12px; cursor:pointer; font-size:14px;
+    }
+    button:hover { filter:brightness(1.1); }
+    button:disabled { opacity:0.55; cursor:not-allowed; }
+    .choice { min-width:220px; text-align:left; }
+    .choice.choice-jens { text-align:center; }
+    .row.choices-jens { flex-direction:column; }
+    .ok { border-color:#2c7a4b; background:#153524; }
+    .bad { border-color:#8a2e2e; background:#3a1616; }
+    .hint-eliminated { opacity:0.5; cursor:not-allowed; pointer-events:none; }
+    .status { margin-top:12px; font-size:14px; min-height:20px; }
+    .divider { height:1px; background:#22304f; margin:14px 0; }
+    .small { font-size:12px; opacity:0.8; margin-top:12px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+
+    /* Settings */
+    details.settings { border: 1px solid #22304f; border-radius: 14px; padding: 10px 12px; background:#0f1627; }
+    details.settings > summary { cursor:pointer; user-select:none; font-weight:600; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .field { display:flex; flex-direction:column; gap:6px; }
+    label { font-size:13px; opacity:0.9; }
+    select, input[type="number"]{
+      border:1px solid #2a3a61; background:#17223a; color:#e8ecf1;
+      padding:8px 10px; border-radius:10px; font-size:14px;
+    }
+    .scale-list { display:flex; flex-direction:column; gap:6px; max-height: 240px; overflow:auto; padding-right: 6px; }
+    .chk { display:flex; gap:8px; align-items:flex-start; }
+    .chk input { margin-top: 3px; }
+    .actions { margin-top: 10px; display:flex; gap:10px; flex-wrap:wrap; }
+    .hint { font-size:12px; opacity:0.8; }
+    .pill.revealable { cursor:pointer; user-select:none; }
+    .pill.revealable:hover { filter:brightness(1.1); }
+    .mode-row { margin:12px 0; }
+    .mode-btn { min-width:160px; }
+    .test-area { display:none; }
+    .test-area.visible { display:block; }
+    .mode-row.hidden { display:none; }
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+      .choice { min-width: 100%; }
+    }
+  </style>
+
+  <!-- SoundFont player (piano in the browser) -->
+  <script src="https://unpkg.com/soundfont-player@0.12.0/dist/soundfont-player.js"></script>
+</head>
+<body>
+  <div class="page-title">APP: Almost Perfect Pitch 🍑🎵</div>
+
+  <div class="card">
+    <!-- Settings should be CLOSED by default: remove "open" -->
+    <details class="settings">
+      <summary>Settings</summary>
+
+      <div class="grid">
+        <div class="field">
+          <label for="lowestNote">Lowest note (C2–C6)</label>
+          <select id="lowestNote"></select>
+          <div class="hint">Start note is picked uniformly between Lowest and Highest.</div>
+        </div>
+
+        <div class="field">
+          <label for="highestNote">Highest note (C2–C6)</label>
+          <select id="highestNote"></select>
+          <div class="hint">If Lowest &gt; Highest, they will be swapped internally.</div>
+        </div>
+
+        <div class="field">
+          <label for="directionMode">Direction</label>
+          <select id="directionMode">
+            <option value="random" selected>Random (up/down)</option>
+            <option value="up">Up only</option>
+            <option value="down">Down only</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="totalTests">Total tests</label>
+          <input id="totalTests" type="number" min="1" step="1" value="5" />
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label>Scales to include</label>
+        <div class="actions">
+          <button id="selectAllBtn" type="button">Select all</button>
+          <button id="selectNoneBtn" type="button">Select none</button>
+        </div>
+        <div class="scale-list" id="scaleChecklist"></div>
+        <div class="hint">If none are selected, the app will refuse to start a test.</div>
+      </div>
+
+      <div class="actions">
+        <button id="applySettingsBtn" type="button">Apply settings</button>
+      </div>
+    </details>
+
+    <div class="row mode-row" id="modeRow">
+      <button type="button" class="mode-btn" id="scaleTestBtn">Scale test</button>
+      <button type="button" class="mode-btn" id="jensTestBtn">Jens test</button>
+    </div>
+
+    <div class="test-area" id="testArea">
+    <div class="row" style="margin:12px 0 10px;">
+      <span class="pill" id="testMeta">Test: 0 / 10</span>
+      <span class="pill" id="scoreMeta">Score: 0</span>
+      <span class="pill revealable" id="dirMeta" title="Click to reveal">Direction: ?</span>
+      <span class="pill revealable" id="startMeta" title="Click to reveal">Start: ?</span>
+    </div>
+
+    <div class="prompt" id="prompt">Press "Start Test" to begin.</div>
+
+    <div class="row">
+      <button id="startBtn">Start Test</button>
+      <button id="replayBtn" disabled>Replay</button>
+      <button id="hintBtn" disabled>Hint</button>
+      <button id="nextBtn" disabled>Next</button>
+      <button id="restartBtn">Exit</button>
+    </div>
+
+      <div class="divider"></div>
+
+      <div class="row" id="choices"></div>
+
+      <div class="status" id="status"></div>
+      <div class="small">
+        Notes played: <span class="mono" id="notesOut">-</span>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Your scales (same content as Python) =====
+    const SCALES = [
+      { id: 1,  name: "Major (Ajam + Ajam)",                   intervals: [2,2,1,2,2,2,1] },
+      { id: 2,  name: "Dorian (Nahavand + Nahavand)",          intervals: [2,1,2,2,2,1,2] },
+      { id: 3,  name: "Major Double Harmonic (Hejaz + Hejaz)", intervals: [1,3,1,2,1,3,1] },
+      { id: 4,  name: "Phrygian (Kord + Kord)",                intervals: [1,2,2,2,1,2,2] },
+      { id: 5,  name: "Minor Theoric (Nahavand + Kord)",       intervals: [2,1,2,2,1,2,2] },
+      { id: 6,  name: "Minor Harmonic (Nahavand + Hejaz)",     intervals: [2,1,2,2,1,3,1] },
+      { id: 7,  name: "Minor Melodic (Nahavand + Ajam)",       intervals: [2,1,2,2,2,2,1] },
+      { id: 8,  name: "Major Harmonic (Ajam + Hejaz)",         intervals: [2,2,1,2,1,3,1] },
+      { id: 9,  name: "Pentatonic Major",                      intervals: [2,2,3,2,3] },
+      { id: 10, name: "Pentatonic Minor",                      intervals: [3,2,2,3,2] }
+    ];
+
+    // ===== Jenses (tetrachords: 4 notes, 3 intervals) =====
+    const JENSES = [
+      { id: "ajam",     name: "Ajam",     intervals: [2, 2, 1] },
+      { id: "hejaz",    name: "Hejaz",    intervals: [1, 3, 1] },
+      { id: "nahavand", name: "Nahavand", intervals: [2, 1, 2] },
+      { id: "kord",     name: "Kord",     intervals: [1, 2, 2] }
+    ];
+
+    // ===== Helpers =====
+    function buildScaleMidi(startMidi, intervals) {
+      const notes = [startMidi];
+      let current = startMidi;
+      for (const interval of intervals) {
+        current += interval;
+        notes.push(current);
+      }
+      return notes;
+    }
+
+    function midiToNoteName(midi) {
+      const names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+      const octave = Math.floor(midi / 12) - 1;
+      const note = names[midi % 12];
+      return `${note}${octave}`;
+    }
+
+    function noteNameToMidi(noteName) {
+      // expects e.g. "C#3", "D4"
+      const names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+      const m = /^([A-G]#?)(\d)$/.exec(noteName);
+      if (!m) return 60;
+      const pitch = m[1];
+      const octave = Number(m[2]);
+      const idx = names.indexOf(pitch);
+      return (octave + 1) * 12 + idx;
+    }
+
+    function clampInt(x, lo, hi) {
+      const v = Math.trunc(Number(x));
+      if (Number.isNaN(v)) return lo;
+      return Math.min(Math.max(v, lo), hi);
+    }
+
+    function randIntInclusive(lo, hi) {
+      return lo + Math.floor(Math.random() * (hi - lo + 1));
+    }
+
+    // ===== Fixed playback settings (not shown in UI) =====
+    const DEFAULT_NOTE_DURATION_SEC = 0.5;
+    const DEFAULT_PAUSE_DURATION_SEC = 0.05;
+
+    // ===== SoundFont piano =====
+    let audioCtx = null;
+    let piano = null;
+
+    function ensureAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    async function ensurePiano() {
+      const ctx = ensureAudio();
+      if (ctx.state === "suspended") await ctx.resume();
+      if (!piano) {
+        piano = await Soundfont.instrument(ctx, "acoustic_grand_piano", {
+          soundfont: "MusyngKite",
+          format: "mp3"
+        });
+      }
+      return piano;
+    }
+
+    async function sleep(ms) {
+      return new Promise(res => setTimeout(res, ms));
+    }
+
+    async function playScale(midiNotes, noteDurationSec, pauseDurationSec) {
+      const ctx = ensureAudio();
+      const inst = await ensurePiano();
+
+      for (const midi of midiNotes) {
+        inst.play(midi, ctx.currentTime, {
+          duration: noteDurationSec,
+          gain: 0.8,
+          velocity: 110
+        });
+        await sleep(noteDurationSec * 1000);
+        await sleep(pauseDurationSec * 1000);
+      }
+    }
+
+    // ===== Settings state =====
+    const SETTINGS_STORAGE_KEY = "scaleEarTrainerSettings";
+    const settings = {
+      lowestMidi: noteNameToMidi("G2"), // default lowest
+      highestMidi: noteNameToMidi("D4"), // default highest
+      directionMode: "random", // "random" | "up" | "down"
+      totalTests: 5,
+      enabledScaleIds: new Set(SCALES.map(s => s.id))
+    };
+
+    function loadSettingsFromStorage() {
+      try {
+        const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data.lowestMidi != null) settings.lowestMidi = clampInt(data.lowestMidi, 0, 127);
+        if (data.highestMidi != null) settings.highestMidi = clampInt(data.highestMidi, 0, 127);
+        if (data.directionMode === "up" || data.directionMode === "down" || data.directionMode === "random") settings.directionMode = data.directionMode;
+        if (data.totalTests != null) settings.totalTests = clampInt(data.totalTests, 1, 1000000);
+        if (Array.isArray(data.enabledScaleIds)) {
+          const ids = data.enabledScaleIds.map(Number).filter(id => SCALES.some(s => s.id === id));
+          settings.enabledScaleIds = new Set(ids.length ? ids : SCALES.map(s => s.id));
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    function saveSettingsToStorage() {
+      try {
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
+          lowestMidi: settings.lowestMidi,
+          highestMidi: settings.highestMidi,
+          directionMode: settings.directionMode,
+          totalTests: settings.totalTests,
+          enabledScaleIds: [...settings.enabledScaleIds]
+        }));
+      } catch (e) { /* ignore */ }
+    }
+
+    // ===== App state =====
+    let testIndex = 0;
+    let correctCount = 0;
+
+    let testMode = null; // null | "scale" | "jens"
+    let current = null; // scale: {scale, chosenScaleId, ...} | jens: {jens, chosenJensId, ...}
+    let answered = false;
+    let directionRevealed = false;
+    let startRevealed = false;
+    let hintUsed = false;
+    let isPlaying = false;
+
+    // ===== UI elements =====
+    const testMeta = document.getElementById("testMeta");
+    const scoreMeta = document.getElementById("scoreMeta");
+    const dirMeta = document.getElementById("dirMeta");
+    const startMeta = document.getElementById("startMeta");
+
+    const promptEl = document.getElementById("prompt");
+    const choicesEl = document.getElementById("choices");
+    const statusEl = document.getElementById("status");
+    const notesOut = document.getElementById("notesOut");
+
+    const modeRow = document.getElementById("modeRow");
+    const testArea = document.getElementById("testArea");
+    const scaleTestBtn = document.getElementById("scaleTestBtn");
+    const jensTestBtn = document.getElementById("jensTestBtn");
+    const startBtn = document.getElementById("startBtn");
+    const replayBtn = document.getElementById("replayBtn");
+    const hintBtn = document.getElementById("hintBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const restartBtn = document.getElementById("restartBtn");
+
+    // Settings UI elements
+    const lowestNoteEl = document.getElementById("lowestNote");
+    const highestNoteEl = document.getElementById("highestNote");
+    const directionModeEl = document.getElementById("directionMode");
+    const totalTestsEl = document.getElementById("totalTests");
+    const scaleChecklistEl = document.getElementById("scaleChecklist");
+    const selectAllBtn = document.getElementById("selectAllBtn");
+    const selectNoneBtn = document.getElementById("selectNoneBtn");
+    const applySettingsBtn = document.getElementById("applySettingsBtn");
+
+    function setMeta() {
+      testMeta.textContent = `Test: ${testIndex} / ${settings.totalTests}`;
+      scoreMeta.textContent = `Score: ${correctCount}`;
+      const dirVal = current ? current.direction : "-";
+      const startVal = current ? midiToNoteName(current.startMidi) : "-";
+      dirMeta.textContent = current ? (directionRevealed ? `Direction: ${dirVal}` : "Direction: ?") : "Direction: -";
+      startMeta.textContent = current ? (startRevealed ? `Start: ${startVal}` : "Start: ?") : "Start: -";
+      startBtn.style.display = (testIndex === 0) ? "" : "none";
+    }
+
+    function clearChoices() {
+      choicesEl.innerHTML = "";
+    }
+
+    function renderChoices() {
+      clearChoices();
+      if (!current) return;
+
+      if (testMode === "scale") {
+        choicesEl.className = "row";
+        for (const s of current.availableScales) {
+          const b = document.createElement("button");
+          b.className = "choice";
+          b.textContent = `${s.id}: ${s.name}`;
+          b.disabled = answered;
+          b.addEventListener("click", () => handleGuess(s.id, b));
+          choicesEl.appendChild(b);
+        }
+      } else {
+        choicesEl.className = "row choices-jens";
+        current.availableJenses.forEach((j, i) => {
+          const b = document.createElement("button");
+          b.className = "choice choice-jens";
+          b.dataset.jensId = j.id;
+          b.textContent = `${i + 1}: ${j.name}`;
+          b.disabled = answered;
+          b.addEventListener("click", () => handleGuess(j.id, b));
+          choicesEl.appendChild(b);
+        });
+      }
+    }
+
+    function lockChoices() {
+      [...choicesEl.querySelectorAll("button")].forEach(b => b.disabled = true);
+    }
+
+    function getEnabledScales() {
+      return SCALES.filter(s => settings.enabledScaleIds.has(s.id));
+    }
+
+    function pickDirection() {
+      if (settings.directionMode === "up") return "up";
+      if (settings.directionMode === "down") return "down";
+      return (Math.random() < 0.5) ? "up" : "down";
+    }
+
+    function newTest() {
+      if (testIndex >= settings.totalTests) return;
+
+      if (testMode === "jens") {
+      testIndex += 1;
+      answered = false;
+      directionRevealed = false;
+      startRevealed = false;
+      hintUsed = false;
+
+      const jens = JENSES[Math.floor(Math.random() * JENSES.length)];
+        const direction = pickDirection();
+        const lo = Math.min(settings.lowestMidi, settings.highestMidi);
+        const hi = Math.max(settings.lowestMidi, settings.highestMidi);
+        const startMidi = randIntInclusive(lo, hi);
+
+        let midiNotes = buildScaleMidi(startMidi, jens.intervals);
+        if (direction === "down") midiNotes = [...midiNotes].reverse();
+        const noteNames = midiNotes.map(midiToNoteName);
+
+        current = {
+          jens,
+          chosenJensId: jens.id,
+          direction,
+          startMidi,
+          midiNotes,
+          noteNames,
+          availableJenses: JENSES
+        };
+
+        promptEl.textContent = `Listen, then choose the jens.`;
+        notesOut.textContent = "-";
+        nextBtn.disabled = true;
+        hintBtn.disabled = false;
+        renderChoices();
+        setMeta();
+        if (!piano) {
+          statusEl.textContent = "Loading piano sound…";
+          replayBtn.disabled = true;
+          ensurePiano().then(() => {
+            replayBtn.disabled = false;
+            if (statusEl.textContent === "Loading piano sound…") statusEl.textContent = "";
+            doPlay();
+          });
+        } else {
+          statusEl.textContent = "";
+          replayBtn.disabled = false;
+          doPlay();
+        }
+        return;
+      }
+
+      const enabledScales = getEnabledScales();
+      if (enabledScales.length === 0) {
+        statusEl.textContent = "Select at least one scale in Settings.";
+        replayBtn.disabled = true;
+        nextBtn.disabled = true;
+        clearChoices();
+        return;
+      }
+
+      testIndex += 1;
+      answered = false;
+      directionRevealed = false;
+      startRevealed = false;
+      hintUsed = false;
+
+      const scale = enabledScales[Math.floor(Math.random() * enabledScales.length)];
+      const direction = pickDirection();
+
+      const lo = Math.min(settings.lowestMidi, settings.highestMidi);
+      const hi = Math.max(settings.lowestMidi, settings.highestMidi);
+      const startMidi = randIntInclusive(lo, hi);
+
+      let midiNotes = buildScaleMidi(startMidi, scale.intervals);
+      if (direction === "down") midiNotes = [...midiNotes].reverse();
+
+      const noteNames = midiNotes.map(midiToNoteName);
+
+      current = {
+        scale,
+        chosenScaleId: scale.id,
+        direction,
+        startMidi,
+        midiNotes,
+        noteNames,
+        availableScales: enabledScales
+      };
+
+      promptEl.textContent = `Listen, then choose the scale.`;
+      notesOut.textContent = "-";
+      nextBtn.disabled = true;
+      hintBtn.disabled = false;
+      renderChoices();
+      setMeta();
+      if (!piano) {
+        statusEl.textContent = "Loading piano sound…";
+        replayBtn.disabled = true;
+        ensurePiano().then(() => {
+          replayBtn.disabled = false;
+          if (statusEl.textContent === "Loading piano sound…") statusEl.textContent = "";
+          doPlay();
+        });
+      } else {
+        statusEl.textContent = "";
+        replayBtn.disabled = false;
+        doPlay();
+      }
+    }
+
+    function useHint() {
+      if (!current || answered || hintUsed) return;
+      const btns = [...choicesEl.querySelectorAll("button.choice:not(.hint-eliminated)")];
+      const correctId = testMode === "jens" ? current.chosenJensId : current.chosenScaleId;
+      const correctBtn = testMode === "jens"
+        ? btns.find(b => b.dataset.jensId === correctId)
+        : btns.find(b => b.textContent.startsWith(`${correctId}:`));
+      const wrongBtns = btns.filter(b => b !== correctBtn);
+      const toRemove = Math.min(Math.floor(wrongBtns.length / 2) + 1, wrongBtns.length);
+      for (let i = wrongBtns.length - 1; i > 0 && toRemove > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [wrongBtns[i], wrongBtns[j]] = [wrongBtns[j], wrongBtns[i]];
+      }
+      wrongBtns.slice(0, toRemove).forEach(b => {
+        b.classList.add("hint-eliminated");
+        b.disabled = true;
+      });
+      hintUsed = true;
+      hintBtn.disabled = true;
+      statusEl.textContent = "Half of the wrong choices were eliminated.";
+    }
+
+    async function doPlay() {
+      if (!current) return;
+      if (isPlaying) return;
+      isPlaying = true;
+      replayBtn.disabled = true;
+      nextBtn.disabled = true;
+      statusEl.textContent = "Playing…";
+      try {
+        await playScale(current.midiNotes, DEFAULT_NOTE_DURATION_SEC, DEFAULT_PAUSE_DURATION_SEC);
+        statusEl.textContent = testMode === "jens" ? "Choose the jens." : "Choose the scale.";
+      } finally {
+        isPlaying = false;
+        replayBtn.disabled = false;
+        nextBtn.disabled = answered ? false : true;
+      }
+    }
+
+    function handleGuess(guessId, clickedBtn) {
+      if (!current || answered) return;
+      answered = true;
+      lockChoices();
+
+      let correct, correctBtn;
+      if (testMode === "jens") {
+        correct = (guessId === current.chosenJensId);
+        const btns = [...choicesEl.querySelectorAll("button")];
+        correctBtn = btns.find(b => b.dataset.jensId === current.chosenJensId);
+      } else {
+        correct = (guessId === current.chosenScaleId);
+        const btns = [...choicesEl.querySelectorAll("button")];
+        correctBtn = btns.find(b => b.textContent.startsWith(`${current.chosenScaleId}:`));
+      }
+      if (correctBtn) correctBtn.classList.add("ok");
+      if (!correct) clickedBtn.classList.add("bad");
+
+      if (correct) {
+        correctCount += 1;
+        statusEl.textContent = "✅ Correct!";
+      } else {
+        const correctName = testMode === "jens" ? current.jens.name : `${current.chosenScaleId}: ${current.scale.name}`;
+        statusEl.textContent = `❌ Incorrect!`;
+      }
+
+      notesOut.textContent = current.noteNames.join(" ");
+      nextBtn.disabled = false;
+      replayBtn.disabled = false;
+      hintBtn.disabled = true;
+      setMeta();
+
+      nextBtn.textContent = (testIndex === settings.totalTests) ? "Finish" : "Next";
+    }
+
+    function finishIfDone() {
+      if (testIndex < settings.totalTests) return false;
+      promptEl.textContent = "Done.";
+      statusEl.textContent = `Final score: ${correctCount} / ${settings.totalTests}`;
+      replayBtn.disabled = true;
+      hintBtn.disabled = true;
+      nextBtn.disabled = true;
+      clearChoices();
+      setMeta();
+      return true;
+    }
+
+    function restart() {
+      testMode = null;
+      testIndex = 0;
+      correctCount = 0;
+      current = null;
+      answered = false;
+      directionRevealed = false;
+      startRevealed = false;
+
+      modeRow.classList.remove("hidden");
+      testArea.classList.remove("visible");
+      promptEl.textContent = "Choose test type: Scale or Jens.";
+      statusEl.textContent = "";
+      notesOut.textContent = "-";
+
+      replayBtn.disabled = true;
+      hintBtn.disabled = true;
+      nextBtn.disabled = true;
+      nextBtn.textContent = "Next";
+
+      clearChoices();
+      setMeta();
+    }
+
+    function enterTestMode(mode) {
+      testMode = mode;
+      testIndex = 0;
+      correctCount = 0;
+      current = null;
+      answered = false;
+      directionRevealed = false;
+      startRevealed = false;
+      modeRow.classList.add("hidden");
+      testArea.classList.add("visible");
+      promptEl.textContent = "Press \"Start Test\" to begin.";
+      statusEl.textContent = "";
+      notesOut.textContent = "-";
+      clearChoices();
+      setMeta();
+      replayBtn.disabled = true;
+      hintBtn.disabled = true;
+      nextBtn.disabled = true;
+      nextBtn.textContent = "Next";
+    }
+
+    // ===== Settings UI wiring =====
+    function buildScaleChecklist() {
+      scaleChecklistEl.innerHTML = "";
+      for (const s of SCALES) {
+        const row = document.createElement("label");
+        row.className = "chk";
+
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = settings.enabledScaleIds.has(s.id);
+        cb.dataset.scaleId = String(s.id);
+
+        const text = document.createElement("div");
+        text.textContent = `${s.id}: ${s.name}`;
+
+        row.appendChild(cb);
+        row.appendChild(text);
+        scaleChecklistEl.appendChild(row);
+      }
+    }
+
+    function buildNoteSelectOptions(selectEl) {
+      // C2..C6 inclusive
+      const startMidi = noteNameToMidi("C2"); // 36
+      const endMidi = noteNameToMidi("C6");   // 84
+      selectEl.innerHTML = "";
+      for (let m = startMidi; m <= endMidi; m += 1) {
+        const opt = document.createElement("option");
+        opt.value = String(m);
+        opt.textContent = midiToNoteName(m);
+        selectEl.appendChild(opt);
+      }
+    }
+
+    function setSettingsInputsFromState() {
+      buildNoteSelectOptions(lowestNoteEl);
+      buildNoteSelectOptions(highestNoteEl);
+
+      lowestNoteEl.value = String(settings.lowestMidi);
+      highestNoteEl.value = String(settings.highestMidi);
+      directionModeEl.value = settings.directionMode;
+      totalTestsEl.value = String(settings.totalTests);
+
+      buildScaleChecklist();
+      setMeta();
+      testMeta.textContent = `Test: ${testIndex} / ${settings.totalTests}`;
+    }
+
+    function applySettingsFromInputs() {
+      // lowest/highest notes
+      settings.lowestMidi = clampInt(lowestNoteEl.value, 0, 127);
+      settings.highestMidi = clampInt(highestNoteEl.value, 0, 127);
+
+      // direction
+      const dm = directionModeEl.value;
+      settings.directionMode = (dm === "up" || dm === "down" || dm === "random") ? dm : "random";
+
+      // tests
+      settings.totalTests = clampInt(totalTestsEl.value, 1, 1000000);
+
+      // scale selection
+      const newSet = new Set();
+      const boxes = [...scaleChecklistEl.querySelectorAll('input[type="checkbox"]')];
+      for (const cb of boxes) {
+        if (cb.checked) newSet.add(Number(cb.dataset.scaleId));
+      }
+      settings.enabledScaleIds = newSet;
+
+      saveSettingsToStorage();
+      testMeta.textContent = `Test: ${testIndex} / ${settings.totalTests}`;
+      setMeta();
+    }
+
+    selectAllBtn.addEventListener("click", () => {
+      const boxes = [...scaleChecklistEl.querySelectorAll('input[type="checkbox"]')];
+      for (const cb of boxes) cb.checked = true;
+    });
+
+    selectNoneBtn.addEventListener("click", () => {
+      const boxes = [...scaleChecklistEl.querySelectorAll('input[type="checkbox"]')];
+      for (const cb of boxes) cb.checked = false;
+    });
+
+    applySettingsBtn.addEventListener("click", () => {
+      applySettingsFromInputs();
+      statusEl.textContent = "Settings applied.";
+    });
+
+    // ===== Events =====
+    startBtn.addEventListener("click", () => {
+      if (testIndex === 0 || testIndex < settings.totalTests) newTest();
+    });
+
+    replayBtn.addEventListener("click", doPlay);
+    hintBtn.addEventListener("click", useHint);
+
+    nextBtn.addEventListener("click", () => {
+      if (finishIfDone()) return;
+      newTest();
+    });
+
+    restartBtn.addEventListener("click", restart);
+
+    scaleTestBtn.addEventListener("click", () => enterTestMode("scale"));
+    jensTestBtn.addEventListener("click", () => enterTestMode("jens"));
+
+    dirMeta.addEventListener("click", () => {
+      if (current && !directionRevealed) { directionRevealed = true; setMeta(); }
+    });
+    startMeta.addEventListener("click", () => {
+      if (current && !startRevealed) { startRevealed = true; setMeta(); }
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener("keydown", (e) => {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "select" || tag === "textarea") return;
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (!replayBtn.disabled) doPlay();
+      } else if (e.code === "Enter") {
+        e.preventDefault();
+        if (!nextBtn.disabled) {
+          if (finishIfDone()) return;
+          newTest();
+        } else if (testArea.classList.contains("visible") && testIndex === 0) {
+          newTest();
+        }
+      } else if (e.code === "Escape") {
+        e.preventDefault();
+        if (testArea.classList.contains("visible")) restart();
+      } else {
+        // 1-9 -> choices 1-9, Minus -> choice 10
+        const choiceBtns = [...choicesEl.querySelectorAll("button.choice:not(.hint-eliminated)")].filter(b => !b.disabled);
+        let idx = -1;
+        if (e.code >= "Digit1" && e.code <= "Digit9") idx = parseInt(e.code.replace("Digit", ""), 10) - 1;
+        else if (e.code === "Minus") idx = 9;
+        if (idx >= 0 && choiceBtns[idx]) {
+          e.preventDefault();
+          choiceBtns[idx].click();
+        }
+      }
+    });
+
+    // init
+    loadSettingsFromStorage();
+    setSettingsInputsFromState();
+    restart();
+  </script>
+</body>
+</html>
