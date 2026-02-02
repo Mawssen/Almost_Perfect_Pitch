@@ -101,6 +101,25 @@
     .help-modal ul { padding-left:20px; }
     .help-modal kbd { background:#17223a; border:1px solid #2a3a61; border-radius:4px; padding:2px 6px; font-size:12px; }
     .help-modal-close { margin-top:16px; }
+    /* Learn modal */
+    .learn-modal { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:100; padding:24px; box-sizing:border-box; }
+    .learn-modal.visible { display:flex; }
+    .learn-modal-content { background:#121a2b; border:1px solid #22304f; border-radius:14px; padding:24px; max-width:560px; max-height:90vh; overflow:auto; width:100%; }
+    .learn-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px; }
+    .learn-modal h2 { margin:0; font-size:18px; color:#7aa8ff; }
+    .learn-tonic-row { display:flex; align-items:center; gap:8px; }
+    .learn-tonic-row label { font-size:13px; opacity:0.9; }
+    .learn-tonic-row select { padding:6px 8px; font-size:13px; min-width:72px; border:1px solid #2a3a61; background:#17223a; color:#e8ecf1; border-radius:10px; }
+    .learn-tabs { display:flex; gap:8px; margin-bottom:14px; }
+    .learn-tabs button { padding:8px 14px; border-radius:10px; }
+    .learn-tabs button.active { border-color:#7aa8ff; background:#1a2a4a; color:#7aa8ff; }
+    .learn-list { display:flex; flex-direction:column; gap:14px; }
+    .learn-item { border:1px solid #22304f; border-radius:10px; padding:12px 14px; background:#0f1627; }
+    .learn-item-title { font-weight:700; font-size:15px; margin-bottom:4px; }
+    .learn-item-pattern { font-family:ui-monospace, monospace; font-size:13px; opacity:0.9; margin-bottom:6px; }
+    .learn-item-desc { font-size:13px; opacity:0.85; margin-bottom:10px; line-height:1.4; }
+    .learn-item-play-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .learn-modal-close { margin-top:16px; }
     @media (max-width: 720px) {
       .grid { grid-template-columns: 1fr; }
       .choice { min-width: 100%; }
@@ -180,6 +199,7 @@
     <div class="main-menu" id="mainMenu">
       <button type="button" class="mode-btn" id="scaleTestBtn">Scale test</button>
       <button type="button" class="mode-btn" id="jensTestBtn">Jens test</button>
+      <button type="button" id="learnBtn">Learn</button>
       <button type="button" id="settingsBtn">Settings</button>
       <button type="button" class="help-btn" id="helpBtn">Help</button>
     </div>
@@ -229,6 +249,29 @@
     </div>
   </div>
 
+  <div class="learn-modal" id="learnModal" aria-hidden="true">
+    <div class="learn-modal-content">
+      <div class="learn-header">
+        <h2>Learn scales &amp; jens</h2>
+        <div class="learn-tonic-row">
+          <label for="learnTonicSelect">Tonic:</label>
+          <select id="learnTonicSelect"></select>
+          <label for="learnDirectionSelect">Direction:</label>
+          <select id="learnDirectionSelect">
+            <option value="up">Up</option>
+            <option value="down">Down</option>
+          </select>
+        </div>
+      </div>
+      <div class="learn-tabs">
+        <button type="button" id="learnTabScales" class="learn-tab active">Scales</button>
+        <button type="button" id="learnTabJens" class="learn-tab">Jens</button>
+      </div>
+      <div id="learnList" class="learn-list"></div>
+      <button type="button" class="learn-modal-close" id="learnModalClose">Close</button>
+    </div>
+  </div>
+
   <div class="help-modal" id="helpModal" aria-hidden="true">
     <div class="help-modal-content">
       <h2>How the app works</h2>
@@ -252,24 +295,24 @@
   <script>
     // ===== Your scales (same content as Python) =====
     const SCALES = [
-      { id: 1,  name: "Major (Ajam + Ajam)",                   intervals: [2,2,1,2,2,2,1] },
-      { id: 2,  name: "Dorian (Nahavand + Nahavand)",          intervals: [2,1,2,2,2,1,2] },
-      { id: 3,  name: "Major Double Harmonic (Hejaz + Hejaz)", intervals: [1,3,1,2,1,3,1] },
-      { id: 4,  name: "Phrygian (Kord + Kord)",                intervals: [1,2,2,2,1,2,2] },
-      { id: 5,  name: "Minor Theoric (Nahavand + Kord)",       intervals: [2,1,2,2,1,2,2] },
-      { id: 6,  name: "Minor Harmonic (Nahavand + Hejaz)",     intervals: [2,1,2,2,1,3,1] },
-      { id: 7,  name: "Minor Melodic (Nahavand + Ajam)",       intervals: [2,1,2,2,2,2,1] },
-      { id: 8,  name: "Major Harmonic (Ajam + Hejaz)",         intervals: [2,2,1,2,1,3,1] },
-      { id: 9,  name: "Pentatonic Major",                      intervals: [2,2,3,2,3] },
-      { id: 10, name: "Pentatonic Minor",                      intervals: [3,2,2,3,2] }
+      { id: 1,  name: "Major (Ajam + Ajam)",                   intervals: [2,2,1,2,2,2,1], description: "Bright, happy; the default Western major scale." },
+      { id: 2,  name: "Dorian (Nahavand + Nahavand)",          intervals: [2,1,2,2,2,1,2], description: "Minor with raised sixth; jazzy, smooth." },
+      { id: 3,  name: "Major Double Harmonic (Hejaz + Hejaz)", intervals: [1,3,1,2,1,3,1], description: "Eastern, dramatic; augmented second." },
+      { id: 4,  name: "Phrygian (Kord + Kord)",                intervals: [1,2,2,2,1,2,2], description: "Dark, Spanish; lowered second." },
+      { id: 5,  name: "Minor Theoric (Nahavand + Kord)",       intervals: [2,1,2,2,1,2,2], description: "Natural minor; sad, classical." },
+      { id: 6,  name: "Minor Harmonic (Nahavand + Hejaz)",     intervals: [2,1,2,2,1,3,1], description: "Minor with raised seventh; tense, dramatic." },
+      { id: 7,  name: "Minor Melodic (Nahavand + Ajam)",       intervals: [2,1,2,2,2,2,1], description: "Jazz minor; ascending form." },
+      { id: 8,  name: "Major Harmonic (Ajam + Hejaz)",         intervals: [2,2,1,2,1,3,1], description: "Exotic major; augmented second." },
+      { id: 9,  name: "Pentatonic Major",                      intervals: [2,2,3,2,3], description: "Five notes; bright, open; no half steps." },
+      { id: 10, name: "Pentatonic Minor",                      intervals: [3,2,2,3,2], description: "Five notes; bluesy, rock; no half steps." }
     ];
 
     // ===== Jenses (tetrachords: 4 notes, 3 intervals) =====
     const JENSES = [
-      { id: "ajam",     name: "Ajam",     intervals: [2, 2, 1] },
-      { id: "hejaz",    name: "Hejaz",    intervals: [1, 3, 1] },
-      { id: "nahavand", name: "Nahavand", intervals: [2, 1, 2] },
-      { id: "kord",     name: "Kord",     intervals: [1, 2, 2] }
+      { id: "ajam",     name: "Ajam",     intervals: [2, 2, 1], description: "Major tetrachord; whole-whole-half." },
+      { id: "hejaz",    name: "Hejaz",    intervals: [1, 3, 1], description: "Harmonic/flamenco; half-augmented-half." },
+      { id: "nahavand", name: "Nahavand", intervals: [2, 1, 2], description: "Dorian lower tetrachord; whole-half-whole." },
+      { id: "kord",     name: "Kord",     intervals: [1, 2, 2], description: "Phrygian lower tetrachord; half-whole-whole." }
     ];
 
     // ===== Helpers =====
@@ -353,6 +396,23 @@
         });
         await sleep(noteDurationSec * 1000);
         if (playbackCancelled) return;
+        await sleep(pauseDurationSec * 1000);
+      }
+    }
+
+    let learnPlaySessionId = 0;
+    async function playScaleForLearn(midiNotes, sessionId, noteDurationSec, pauseDurationSec) {
+      const ctx = ensureAudio();
+      const inst = await ensurePiano();
+      for (const midi of midiNotes) {
+        if (learnPlaySessionId !== sessionId) return;
+        inst.play(midi, ctx.currentTime, {
+          duration: noteDurationSec,
+          gain: 0.8,
+          velocity: 110
+        });
+        await sleep(noteDurationSec * 1000);
+        if (learnPlaySessionId !== sessionId) return;
         await sleep(pauseDurationSec * 1000);
       }
     }
@@ -1139,6 +1199,100 @@
       }
     });
 
+    const learnModal = document.getElementById("learnModal");
+    const learnModalClose = document.getElementById("learnModalClose");
+    const learnTabScales = document.getElementById("learnTabScales");
+    const learnTabJens = document.getElementById("learnTabJens");
+    const learnListEl = document.getElementById("learnList");
+    const learnTonicSelect = document.getElementById("learnTonicSelect");
+    const learnDirectionSelect = document.getElementById("learnDirectionSelect");
+    const defaultTonicMidi = noteNameToMidi("C4");
+
+    function renderLearnList(mode) {
+      if (!learnListEl) return;
+      learnListEl.innerHTML = "";
+      const items = mode === "jens" ? JENSES : SCALES;
+      for (const item of items) {
+        const card = document.createElement("div");
+        card.className = "learn-item";
+        const title = document.createElement("div");
+        title.className = "learn-item-title";
+        title.textContent = item.name;
+        const pattern = document.createElement("div");
+        pattern.className = "learn-item-pattern";
+        pattern.textContent = "Semitones pattern: " + item.intervals.join(", ");
+        const desc = document.createElement("div");
+        desc.className = "learn-item-desc";
+        desc.textContent = item.description || "";
+        const playRow = document.createElement("div");
+        playRow.className = "learn-item-play-row";
+        const playBtn = document.createElement("button");
+        playBtn.type = "button";
+        playBtn.textContent = "Play";
+        playBtn.addEventListener("click", () => {
+          learnPlaySessionId += 1;
+          const sessionId = learnPlaySessionId;
+          const tonicMidi = learnTonicSelect ? parseInt(learnTonicSelect.value, 10) : defaultTonicMidi;
+          let notes = buildScaleMidi(tonicMidi, item.intervals);
+          const dir = learnDirectionSelect && learnDirectionSelect.value === "down" ? "down" : "up";
+          if (dir === "down") notes = [...notes].reverse();
+          (async () => {
+            await playScaleForLearn(notes, sessionId, DEFAULT_NOTE_DURATION_SEC, DEFAULT_PAUSE_DURATION_SEC);
+          })();
+        });
+        playRow.appendChild(playBtn);
+        card.appendChild(title);
+        card.appendChild(pattern);
+        card.appendChild(desc);
+        card.appendChild(playRow);
+        learnListEl.appendChild(card);
+      }
+    }
+
+    const learnBtn = document.getElementById("learnBtn");
+    if (learnBtn && learnModal) {
+      learnBtn.addEventListener("click", () => {
+        playbackCancelled = true;
+        if (learnTonicSelect) {
+          buildNoteSelectOptions(learnTonicSelect);
+          learnTonicSelect.value = String(defaultTonicMidi);
+        }
+        renderLearnList("scale");
+        if (learnTabScales) { learnTabScales.classList.add("active"); }
+        if (learnTabJens) { learnTabJens.classList.remove("active"); }
+        learnModal.classList.add("visible");
+        learnModal.setAttribute("aria-hidden", "false");
+      });
+    }
+    if (learnTabScales) {
+      learnTabScales.addEventListener("click", () => {
+        renderLearnList("scale");
+        learnTabScales.classList.add("active");
+        if (learnTabJens) learnTabJens.classList.remove("active");
+      });
+    }
+    if (learnTabJens) {
+      learnTabJens.addEventListener("click", () => {
+        renderLearnList("jens");
+        learnTabJens.classList.add("active");
+        if (learnTabScales) learnTabScales.classList.remove("active");
+      });
+    }
+    if (learnModalClose && learnModal) {
+      learnModalClose.addEventListener("click", () => {
+        playbackCancelled = true;
+        learnModal.classList.remove("visible");
+        learnModal.setAttribute("aria-hidden", "true");
+      });
+      learnModal.addEventListener("click", (e) => {
+        if (e.target === learnModal) {
+          playbackCancelled = true;
+          learnModal.classList.remove("visible");
+          learnModal.setAttribute("aria-hidden", "true");
+        }
+      });
+    }
+
     scaleTestBtn.addEventListener("click", () => enterTestMode("scale"));
     jensTestBtn.addEventListener("click", () => enterTestMode("jens"));
 
@@ -1169,12 +1323,17 @@
         e.preventDefault();
         const helpModal = document.getElementById("helpModal");
         const statsModal = document.getElementById("statsModal");
+        const learnModal = document.getElementById("learnModal");
         if (helpModal && helpModal.classList.contains("visible")) {
           helpModal.classList.remove("visible");
           helpModal.setAttribute("aria-hidden", "true");
         } else if (statsModal && statsModal.classList.contains("visible")) {
           statsModal.classList.remove("visible");
           statsModal.setAttribute("aria-hidden", "true");
+        } else if (learnModal && learnModal.classList.contains("visible")) {
+          playbackCancelled = true;
+          learnModal.classList.remove("visible");
+          learnModal.setAttribute("aria-hidden", "true");
         } else if (settingsPanel.classList.contains("visible")) {
           settingsPanel.classList.remove("visible");
           mainMenu.classList.remove("hidden");
