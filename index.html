@@ -562,14 +562,15 @@
 
       if (testMode === "scale") {
         choicesEl.className = "row";
-        for (const s of current.availableScales) {
+        current.availableScales.forEach((s, i) => {
           const b = document.createElement("button");
           b.className = "choice";
-          b.textContent = `${s.id}: ${s.name}`;
+          b.dataset.scaleId = String(s.id);
+          b.textContent = `${i + 1}: ${s.name}`;
           b.disabled = answered;
           b.addEventListener("click", () => handleGuess(s.id, b));
           choicesEl.appendChild(b);
-        }
+        });
       } else {
         choicesEl.className = "row choices-jens";
         current.availableJenses.forEach((j, i) => {
@@ -803,7 +804,7 @@
       const correctId = testMode === "jens" ? current.chosenJensId : current.chosenScaleId;
       const correctBtn = testMode === "jens"
         ? btns.find(b => b.dataset.jensId === correctId)
-        : btns.find(b => b.textContent.startsWith(`${correctId}:`));
+        : btns.find(b => b.dataset.scaleId === String(correctId));
       const wrongBtns = btns.filter(b => b !== correctBtn);
       const toRemove = Math.min(Math.floor(wrongBtns.length / 2) + 1, wrongBtns.length);
       for (let i = wrongBtns.length - 1; i > 0 && toRemove > 0; i--) {
@@ -850,7 +851,7 @@
       } else {
         correct = (guessId === current.chosenScaleId);
         const btns = [...choicesEl.querySelectorAll("button")];
-        correctBtn = btns.find(b => b.textContent.startsWith(`${current.chosenScaleId}:`));
+        correctBtn = btns.find(b => b.dataset.scaleId === String(current.chosenScaleId));
       }
       if (correctBtn) correctBtn.classList.add("ok");
       if (!correct) clickedBtn.classList.add("bad");
