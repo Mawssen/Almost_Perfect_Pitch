@@ -307,13 +307,17 @@
       { id: 10, name: "Pentatonic Minor",                      intervals: [3,2,2,3,2], description: "Five notes; bluesy, rock; no half steps." }
     ];
 
-    // ===== Jenses (tetrachords: 4 notes, 3 intervals) =====
+    // ===== Jenses (tetrachords and related segments) =====
     const JENSES = [
-      { id: "ajam",     name: "Ajam",     intervals: [2, 2, 1], description: "Major tetrachord; whole-whole-half." },
-      { id: "hejaz",    name: "Hejaz",    intervals: [1, 3, 1], description: "Harmonic/flamenco; half-augmented-half." },
-      { id: "nahavand", name: "Nahavand", intervals: [2, 1, 2], description: "Dorian lower tetrachord; whole-half-whole." },
-      { id: "kord",     name: "Kord",     intervals: [1, 2, 2], description: "Phrygian lower tetrachord; half-whole-whole." }
+      { id: "ajam",     name: "Ajam",           intervals: [2, 2, 1],   description: "Major tetrachord; whole-whole-half." },
+      { id: "hejaz",    name: "Hejaz",          intervals: [1, 3, 1],   description: "Harmonic/flamenco; half-augmented-half." },
+      { id: "nahavand", name: "Nahavand",       intervals: [2, 1, 2],   description: "Dorian lower tetrachord; whole-half-whole." },
+      { id: "kord",     name: "Kord",           intervals: [1, 2, 2],   description: "Phrygian lower tetrachord; half-whole-whole." },
+      { id: "saba-zamzam", name: "Saba-Zamzam",  intervals: [1, 2, 1],   description: "Saba-Zamzam tetrachord; half-whole-half, characteristic of Saba maqam." },
+      { id: "nava-asar",   name: "Nava-Asar",   intervals: [2, 1, 3, 1], description: "Nava-Asar; five-note segment, common in Nava and related contexts." },
+      { id: "asar-kord",   name: "Asar-Kord",   intervals: [1, 2, 3, 1], description: "Asar-Kord; five-note segment, bridging Asar and Kord character." }
     ];
+    const DEFAULT_ENABLED_JENS_IDS = ["ajam", "hejaz", "nahavand", "kord"];
 
     // ===== Helpers =====
     function buildScaleMidi(startMidi, intervals) {
@@ -428,7 +432,7 @@
       directionMode: "random", // "random" | "up" | "down"
       totalTests: 5,
       enabledScaleIds: new Set(SCALES.map(s => s.id)),
-      enabledJensIds: new Set(JENSES.map(j => j.id))
+      enabledJensIds: new Set(DEFAULT_ENABLED_JENS_IDS)
     };
 
     function loadSettingsFromStorage() {
@@ -446,7 +450,7 @@
         }
         if (Array.isArray(data.enabledJensIds)) {
           const ids = data.enabledJensIds.filter(id => JENSES.some(j => j.id === id));
-          settings.enabledJensIds = new Set(ids.length ? ids : JENSES.map(j => j.id));
+          settings.enabledJensIds = new Set(ids.length ? ids : DEFAULT_ENABLED_JENS_IDS);
         }
       } catch (e) { /* ignore */ }
     }
